@@ -1,4 +1,4 @@
-name: codecov
+name: test
 on:
   push:
     branches: [main]
