@@ -1,6 +1,9 @@
 # `cob` 🌽 COmmand Builder
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/broothie/cob.svg)](https://pkg.go.dev/github.com/broothie/cob)
+[![codecov](https://codecov.io/gh/broothie/cob/graph/badge.svg?token=FgyhQS4tMX)](https://codecov.io/gh/broothie/cob)
+[![gosec](https://github.com/broothie/cob/actions/workflows/gosec.yml/badge.svg)](https://github.com/broothie/cob/actions/workflows/gosec.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/broothie/cob)](https://goreportcard.com/report/github.com/broothie/cob)
 
 `cob` is a Go package for building and running `*exec.Cmd` objects.
 
