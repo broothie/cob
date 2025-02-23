@@ -10,6 +10,10 @@
 go get github.com/broothie/cob@latest
 ```
 
+## Documentation
+
+Detailed documentation can be found at [pkg.go.dev](https://pkg.go.dev/github.com/broothie/cob).
+
 ## Usage
 
 ```go
