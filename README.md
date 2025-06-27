@@ -53,7 +53,6 @@ cmd, err := cob.New(ctx, "echo",
 )
 ```
 
-
 ## Why?
 
 The `*exec.Cmd` API isn't terrible by any means,
