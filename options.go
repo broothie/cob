@@ -5,8 +5,10 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/broothie/option"
 )
@@ -34,9 +36,55 @@ func SetEnv(env ...string) option.Func[*exec.Cmd] {
 	}
 }
 
+// validateEnvKey validates environment variable key according to POSIX standards.
+func validateEnvKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("environment variable key cannot be empty")
+	}
+
+	if strings.ContainsRune(key, '=') {
+		return fmt.Errorf("environment variable key cannot contain '=' character")
+	}
+
+	if strings.ContainsRune(key, '\x00') {
+		return fmt.Errorf("environment variable key cannot contain null bytes")
+	}
+
+	// POSIX compliant: must start with letter or underscore
+	if !unicode.IsLetter(rune(key[0])) && key[0] != '_' {
+		return fmt.Errorf("environment variable key must start with letter or underscore, got: %q", key[0])
+	}
+
+	// POSIX compliant: can only contain letters, digits, and underscores
+	for i, r := range key {
+		if !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' {
+			return fmt.Errorf("environment variable key can only contain letters, digits, and underscores, found invalid character %q at position %d", r, i)
+		}
+	}
+
+	return nil
+}
+
+// validateEnvValue validates environment variable value.
+func validateEnvValue(value string) error {
+	if strings.ContainsRune(value, '\x00') {
+		return fmt.Errorf("environment variable value cannot contain null bytes")
+	}
+
+	return nil
+}
+
 // AddEnv adds an environment variable to the command.
 func AddEnv(key, value string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
+		if err := validateEnvKey(key); err != nil {
+			return nil, fmt.Errorf("invalid environment variable key: %w", err)
+		}
+
+		if err := validateEnvValue(value); err != nil {
+			return nil, fmt.Errorf("invalid environment variable value: %w", err)
+		}
+
 		return SetEnv(append(cmd.Env, fmt.Sprintf("%s=%s", key, value))...).Apply(cmd)
 	}
 }

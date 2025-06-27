@@ -90,6 +90,90 @@ func TestOutput(t *testing.T) {
 			},
 			expectedError: "failed to apply option 0: some error\nerror building command",
 		},
+		"AddEnv with empty key": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("", "value"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable key: environment variable key cannot be empty\nerror building command",
+		},
+		"AddEnv with key containing equals": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("KEY=BAD", "value"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable key: environment variable key cannot contain '=' character\nerror building command",
+		},
+		"AddEnv with key containing null byte": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("KEY\x00", "value"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable key: environment variable key cannot contain null bytes\nerror building command",
+		},
+		"AddEnv with key starting with digit": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("9KEY", "value"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable key: environment variable key must start with letter or underscore, got: '9'\nerror building command",
+		},
+		"AddEnv with key containing invalid character": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("KEY-BAD", "value"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable key: environment variable key can only contain letters, digits, and underscores, found invalid character '-' at position 3\nerror building command",
+		},
+		"AddEnv with value containing null byte": {
+			args: Args{
+				ctx:  context.TODO(),
+				name: "echo",
+				options: option.NewOptions(
+					cob.AddEnv("KEY", "value\x00"),
+				),
+			},
+			expectedError: "failed to apply option 0: invalid environment variable value: environment variable value cannot contain null bytes\nerror building command",
+		},
+		"AddEnv with valid key starting with underscore": {
+			args: Args{
+				ctx:     context.TODO(),
+				name:    "bash",
+				options: option.NewOptions(cob.AddArgs("-c", "echo $_TEST"), cob.AddEnv("_TEST", "underscore")),
+			},
+			expectedStdout: "underscore\n",
+		},
+		"AddEnv with valid key containing digits": {
+			args: Args{
+				ctx:     context.TODO(),
+				name:    "bash",
+				options: option.NewOptions(cob.AddArgs("-c", "echo $TEST123"), cob.AddEnv("TEST123", "digits")),
+			},
+			expectedStdout: "digits\n",
+		},
+		"AddEnv with valid key mixed case": {
+			args: Args{
+				ctx:     context.TODO(),
+				name:    "bash",
+				options: option.NewOptions(cob.AddArgs("-c", "echo $MyVar_123"), cob.AddEnv("MyVar_123", "mixed")),
+			},
+			expectedStdout: "mixed\n",
+		},
 	}
 
 	for name, testCase := range testCases {

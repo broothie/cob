@@ -38,7 +38,7 @@ cmd, err := cob.New(ctx, "echo",
 	cob.SetArgs("Hello", "World"),         // Set args directly
 	cob.AddArgs("more", "args"),           // Add to existing args
 	cob.SetEnv("SHELL=bash"),              // Set env directly
-	cob.AddEnv("SHELL", "bash"),           // Add to existing env
+	cob.AddEnv("SHELL", "bash"),           // Add to existing env (validates key/value)
 	cob.SetStdin(os.Stdin),                // Set stdin directly
 	cob.AddStdins(someReader),             // Add to existing stdin
 	cob.SetStdout(os.Stdout),              // Set stdout directly
@@ -51,6 +51,38 @@ cmd, err := cob.New(ctx, "echo",
 	cob.SetSysProcAttr(&syscall.SysProcAttr{}),  // Set process attributes
 	cob.SetWaitDelay(time.Second),         // Set timeout for Wait()
 )
+```
+
+## Environment Variable Validation
+
+The `AddEnv()` function validates environment variable keys and values to prevent common errors:
+
+### Key Validation
+- Must be non-empty
+- Must start with a letter or underscore
+- Can only contain letters, digits, and underscores
+- Cannot contain `=` or null bytes
+
+### Value Validation
+- Cannot contain null bytes
+
+### Examples
+
+```go
+// Valid keys
+cob.AddEnv("PATH", "/usr/bin")           // ✓ starts with letter
+cob.AddEnv("_PRIVATE", "secret")         // ✓ starts with underscore  
+cob.AddEnv("VAR_123", "value")           // ✓ contains digits and underscore
+
+// Invalid keys (will return error)
+cob.AddEnv("", "value")                  // ✗ empty key
+cob.AddEnv("123VAR", "value")            // ✗ starts with digit
+cob.AddEnv("VAR-NAME", "value")          // ✗ contains hyphen
+cob.AddEnv("KEY=VAL", "value")           // ✗ contains equals sign
+cob.AddEnv("KEY\x00", "value")           // ✗ contains null byte
+
+// Invalid values (will return error)
+cob.AddEnv("KEY", "value\x00")           // ✗ value contains null byte
 ```
 
 ## Why?
