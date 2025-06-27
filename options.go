@@ -12,7 +12,7 @@ import (
 	"github.com/broothie/option"
 )
 
-// WithArgs adds arguments to the command (additive).
+// WithArgs adds arguments to the command.
 func WithArgs(args ...string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		cmd.Args = append(cmd.Args, args...)
@@ -20,18 +20,10 @@ func WithArgs(args ...string) option.Func[*exec.Cmd] {
 	}
 }
 
-// WithEnv adds environment variables to the command (additive).
-// Can be called with key-value pairs: WithEnv("KEY1", "value1", "KEY2", "value2")
-// Or with pre-formatted strings: WithEnv("KEY1=value1", "KEY2=value2")
-func WithEnv(env ...string) option.Func[*exec.Cmd] {
+// WithEnv adds an environment variable to the command.
+func WithEnv(key, value string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		// Handle key-value pairs
-		if len(env) == 2 && !strings.Contains(env[0], "=") && !strings.Contains(env[1], "=") {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", env[0], env[1]))
-		} else {
-			// Handle pre-formatted env vars
-			cmd.Env = append(cmd.Env, env...)
-		}
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, value))
 		return cmd, nil
 	}
 }
@@ -44,7 +36,7 @@ func WithDir(dir string) option.Func[*exec.Cmd] {
 	}
 }
 
-// WithStdin adds standard inputs to the command (additive using MultiReader).
+// WithStdin adds standard inputs to the command (using MultiReader).
 func WithStdin(stdins ...io.Reader) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		var readers []io.Reader
@@ -57,7 +49,7 @@ func WithStdin(stdins ...io.Reader) option.Func[*exec.Cmd] {
 	}
 }
 
-// WithStdout adds standard outputs to the command (additive using MultiWriter).
+// WithStdout adds standard outputs to the command (using MultiWriter).
 func WithStdout(stdouts ...io.Writer) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		var writers []io.Writer
@@ -70,7 +62,7 @@ func WithStdout(stdouts ...io.Writer) option.Func[*exec.Cmd] {
 	}
 }
 
-// WithStderr adds standard errors to the command (additive using MultiWriter).
+// WithStderr adds standard errors to the command (using MultiWriter).
 func WithStderr(stderrs ...io.Writer) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		var writers []io.Writer
@@ -83,7 +75,7 @@ func WithStderr(stderrs ...io.Writer) option.Func[*exec.Cmd] {
 	}
 }
 
-// WithExtraFiles adds extra files to the command (additive).
+// WithExtraFiles adds extra files to the command.
 func WithExtraFiles(extraFiles ...*os.File) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		cmd.ExtraFiles = append(cmd.ExtraFiles, extraFiles...)
