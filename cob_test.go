@@ -20,7 +20,7 @@ import (
 
 func TestStart(t *testing.T) {
 	output := new(bytes.Buffer)
-	cmd, err := cob.Start(context.TODO(), "echo", cob.AddArgs("Hello, World"), cob.SetStdout(output))
+	cmd, err := cob.Start(context.TODO(), "echo", cob.WithArgs("Hello, World"), cob.WithStdout(output))
 	test.MustNoError(t, err)
 	test.NoError(t, cmd.Wait())
 	test.Equal(t, output.String(), "Hello, World\n")
@@ -44,7 +44,7 @@ func TestOutput(t *testing.T) {
 			args: Args{
 				ctx:     context.TODO(),
 				name:    "echo",
-				options: option.NewOptions(cob.AddArgs("Hello, World")),
+				options: option.NewOptions(cob.WithArgs("Hello, World")),
 			},
 			expectedStdout: "Hello, World\n",
 		},
@@ -53,8 +53,8 @@ func TestOutput(t *testing.T) {
 				ctx:  context.TODO(),
 				name: "bash",
 				options: option.NewOptions(
-					cob.AddArgs("-c", `echo '$NAME' is "$NAME"`),
-					cob.AddEnv("NAME", "alice"),
+					cob.WithArgs("-c", `echo '$NAME' is "$NAME"`),
+					cob.WithEnv("NAME", "alice"),
 				),
 			},
 			expectedStdout: "$NAME is alice\n",
@@ -64,16 +64,16 @@ func TestOutput(t *testing.T) {
 				ctx:  context.TODO(),
 				name: "tr",
 				options: option.NewOptions(
-					cob.AddArgs("[:upper:]"),
-					cob.AddArgs("[:lower:]"),
-					cob.SetDir("."),
-					cob.AddEnv("KEY", "value"),
-					cob.AddStdins(strings.NewReader("hello, world")),
-					cob.AddStdouts(os.Stdout),
-					cob.AddStderrs(os.Stderr),
-					cob.AddExtraFiles(os.Stdout),
-					cob.SetSysProcAttr(&syscall.SysProcAttr{Setsid: true}),
-					cob.SetWaitDelay(time.Second),
+					cob.WithArgs("[:upper:]"),
+					cob.WithArgs("[:lower:]"),
+					cob.WithDir("."),
+					cob.WithEnv("KEY", "value"),
+					cob.WithStdin(strings.NewReader("hello, world")),
+					cob.WithStdout(os.Stdout),
+					cob.WithStderr(os.Stderr),
+					cob.WithExtraFiles(os.Stdout),
+					cob.WithSysProcAttr(&syscall.SysProcAttr{Setsid: true}),
+					cob.WithWaitDelay(time.Second),
 				),
 			},
 			expectedStdout: "hello, world",
@@ -110,11 +110,11 @@ func ExampleRun() {
 	// Hello, World
 
 	cob.Run(context.TODO(), "echo",
-		cob.AddArgs("Hello,"),
-		cob.AddArgs("World"),
-		cob.AddEnv("SHELL", "bash"),
-		cob.SetStdin(os.Stdin),
-		cob.SetStdout(os.Stdout),
+		cob.WithArgs("Hello,"),
+		cob.WithArgs("World"),
+		cob.WithEnv("SHELL", "bash"),
+		cob.WithStdin(os.Stdin),
+		cob.WithStdout(os.Stdout),
 	)
 }
 
@@ -126,17 +126,17 @@ func ExamplePipe() {
 
 	go func() {
 		cob.Run(context.TODO(), "echo",
-			cob.AddArgs("Hello, World"),
-			cob.SetStdout(pipeInput),
+			cob.WithArgs("Hello, World"),
+			cob.WithStdout(pipeInput),
 		)
 
 		pipeInput.Close()
 	}()
 
 	cob.Run(context.TODO(), "tr",
-		cob.AddArgs("[:upper:]"),
-		cob.AddArgs("[:lower:]"),
-		cob.SetStdin(pipeOutput),
-		cob.SetStdout(os.Stdout),
+		cob.WithArgs("[:upper:]"),
+		cob.WithArgs("[:lower:]"),
+		cob.WithStdin(pipeOutput),
+		cob.WithStdout(os.Stdout),
 	)
 }

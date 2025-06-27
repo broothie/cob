@@ -5,132 +5,102 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/broothie/option"
 )
 
-// SetArgs sets the arguments for the command.
-func SetArgs(args ...string) option.Func[*exec.Cmd] {
+// WithArgs adds arguments to the command (additive).
+func WithArgs(args ...string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.Args = args
+		cmd.Args = append(cmd.Args, args...)
 		return cmd, nil
 	}
 }
 
-// AddArgs adds arguments to the command.
-func AddArgs(args ...string) option.Func[*exec.Cmd] {
+// WithEnv adds environment variables to the command (additive).
+// Can be called with key-value pairs: WithEnv("KEY1", "value1", "KEY2", "value2")
+// Or with pre-formatted strings: WithEnv("KEY1=value1", "KEY2=value2")
+func WithEnv(env ...string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		return SetArgs(append(cmd.Args, args...)...).Apply(cmd)
-	}
-}
-
-// SetEnv sets the environment variables for the command.
-func SetEnv(env ...string) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.Env = env
+		// Handle key-value pairs
+		if len(env) == 2 && !strings.Contains(env[0], "=") && !strings.Contains(env[1], "=") {
+			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", env[0], env[1]))
+		} else {
+			// Handle pre-formatted env vars
+			cmd.Env = append(cmd.Env, env...)
+		}
 		return cmd, nil
 	}
 }
 
-// AddEnv adds an environment variable to the command.
-func AddEnv(key, value string) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		return SetEnv(append(cmd.Env, fmt.Sprintf("%s=%s", key, value))...).Apply(cmd)
-	}
-}
-
-// SetDir sets the working directory for the command.
-func SetDir(dir string) option.Func[*exec.Cmd] {
+// WithDir sets the working directory for the command (single value).
+func WithDir(dir string) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		cmd.Dir = dir
 		return cmd, nil
 	}
 }
 
-// SetStdin sets the standard input for the command.
-func SetStdin(stdin io.Reader) option.Func[*exec.Cmd] {
+// WithStdin adds standard inputs to the command (additive using MultiReader).
+func WithStdin(stdins ...io.Reader) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.Stdin = stdin
-		return cmd, nil
-	}
-}
-
-// AddStdins adds standard inputs to the command.
-func AddStdins(stdins ...io.Reader) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
+		var readers []io.Reader
 		if cmd.Stdin != nil {
-			stdins = append([]io.Reader{cmd.Stdin}, stdins...)
+			readers = append(readers, cmd.Stdin)
 		}
-
-		return SetStdin(io.MultiReader(stdins...)).Apply(cmd)
-	}
-}
-
-// SetStdout sets the standard output for the command.
-func SetStdout(stdout io.Writer) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.Stdout = stdout
+		readers = append(readers, stdins...)
+		cmd.Stdin = io.MultiReader(readers...)
 		return cmd, nil
 	}
 }
 
-// AddStdouts adds standard outputs to the command.
-func AddStdouts(stdouts ...io.Writer) option.Func[*exec.Cmd] {
+// WithStdout adds standard outputs to the command (additive using MultiWriter).
+func WithStdout(stdouts ...io.Writer) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
+		var writers []io.Writer
 		if cmd.Stdout != nil {
-			stdouts = append([]io.Writer{cmd.Stdout}, stdouts...)
+			writers = append(writers, cmd.Stdout)
 		}
-
-		return SetStdout(io.MultiWriter(stdouts...)).Apply(cmd)
-	}
-}
-
-// SetStderr sets the standard error for the command.
-func SetStderr(stderr io.Writer) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.Stderr = stderr
+		writers = append(writers, stdouts...)
+		cmd.Stdout = io.MultiWriter(writers...)
 		return cmd, nil
 	}
 }
 
-// AddStderrs adds standard errors to the command.
-func AddStderrs(stderrs ...io.Writer) option.Func[*exec.Cmd] {
+// WithStderr adds standard errors to the command (additive using MultiWriter).
+func WithStderr(stderrs ...io.Writer) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
+		var writers []io.Writer
 		if cmd.Stderr != nil {
-			stderrs = append([]io.Writer{cmd.Stderr}, stderrs...)
+			writers = append(writers, cmd.Stderr)
 		}
-
-		return SetStderr(io.MultiWriter(stderrs...)).Apply(cmd)
-	}
-}
-
-// SetExtraFiles sets the extra files for the command.
-func SetExtraFiles(extraFiles ...*os.File) option.Func[*exec.Cmd] {
-	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		cmd.ExtraFiles = extraFiles
+		writers = append(writers, stderrs...)
+		cmd.Stderr = io.MultiWriter(writers...)
 		return cmd, nil
 	}
 }
 
-// AddExtraFiles adds extra files to the command.
-func AddExtraFiles(extraFiles ...*os.File) option.Func[*exec.Cmd] {
+// WithExtraFiles adds extra files to the command (additive).
+func WithExtraFiles(extraFiles ...*os.File) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
-		return SetExtraFiles(append(cmd.ExtraFiles, extraFiles...)...).Apply(cmd)
+		cmd.ExtraFiles = append(cmd.ExtraFiles, extraFiles...)
+		return cmd, nil
 	}
 }
 
-// SetSysProcAttr sets the system process attributes for the command.
-func SetSysProcAttr(attr *syscall.SysProcAttr) option.Func[*exec.Cmd] {
+// WithSysProcAttr sets the system process attributes for the command (single value).
+func WithSysProcAttr(attr *syscall.SysProcAttr) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		cmd.SysProcAttr = attr
 		return cmd, nil
 	}
 }
 
-// SetWaitDelay sets the wait delay for the command.
-func SetWaitDelay(delay time.Duration) option.Func[*exec.Cmd] {
+// WithWaitDelay sets the wait delay for the command (single value).
+func WithWaitDelay(delay time.Duration) option.Func[*exec.Cmd] {
 	return func(cmd *exec.Cmd) (*exec.Cmd, error) {
 		cmd.WaitDelay = delay
 		return cmd, nil
