@@ -45,6 +45,6 @@ func Run(ctx context.Context, name string, options ...option.Option[*exec.Cmd]) 
 func Output(ctx context.Context, name string, options ...option.Option[*exec.Cmd]) (*bytes.Buffer, *bytes.Buffer, *exec.Cmd, error) {
 	stdout := new(bytes.Buffer)
 	stderr := new(bytes.Buffer)
-	cmd, err := Run(ctx, name, append(options, AddStdouts(stdout), AddStderrs(stderr))...)
+	cmd, err := Run(ctx, name, append(options, WithStdout(stdout), WithStderr(stderr))...)
 	return stdout, stderr, cmd, err
 }
